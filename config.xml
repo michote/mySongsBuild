@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="utf-8"?>
+<widget xmlns="http://www.w3.org/ns/widgets"
+        xmlns:gap="http://phonegap.com/ns/1.0"
+        xmlns:rim="http://www.blackberry.com/ns/widgets"
+        version="0.5.0.0" id="mySongs">
+
+  <author>Micha Reischuck</author>
+  <name>mySongs</name>
+  <description>mySongs manage and displays your songs (lyrics and chords) in  OpenLyrics XML</description>
+
+  <content src="index.html"/>
+  
+  <license href="http://opensource.org/licenses/mit-license.php">
+    Copyright (c) 2012 Micha Reischuck
+
+    Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+    The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+    THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+  </license>
+  
+  <rim:orientation mode="auto"/>
+  <rim:category name="apps"/>
+
+  <rim:permissions>
+    <rim:permit>access_shared</rim:permit> 
+  </rim:permissions>
+  
+  <preference name="phonegap-version" value="2.5.0" />
+  <feature name="http://api.phonegap.com/1.0/network"/>
+  
+  <!-- Icons -->
+  <!-- <icon src="assets/images/icon64.png" width="64" height="64"/> -->
+  <icon src="assets/images/icon114.png" width="114" height="114"/>
+  <icon src="assets/images/icon256.png" width="256" height="256"/>
+<!--
+  Android
+  <icon src="icons/android/ldpi.png" gap:platform="android" gap:density="ldpi" />
+  <icon src="icons/android/mdpi.png" gap:platform="android" gap:density="mdpi" />
+  <icon src="icons/android/hdpi.png" gap:platform="android" gap:density="hdpi" />
+  <icon src="icons/android/xhdpi.png" gap:platform="android" gap:density="xhdpi" />
+  36x36 for low-density
+  48x48 for medium-density
+  72x72 for high-density
+  96x96 for extra high-density
+  iOS
+  <icon src="icons/ios/icon.png" gap:platform="ios" width="57" height="57" />
+  <icon src="icons/ios/icon-72.png" gap:platform="ios" width="72" height="72" />
+  <icon src="icons/ios/icon_at_2x.png" gap:platform="ios" width="114" height="114" />
+-->
+  
+  <!-- Splash Screens -->
+  <preference name="splash-screen-duration" value="10000" />
+  <gap:splash src="splash.png" />
+  <gap:splash src="assets/splash/featured.png" width="1024" height="768"/>
+  <!-- Android -->
+  <!--<gap:splash src="splash/android/hdpi.png" gap:platform="android" gap:density="hdpi" />
+  <gap:splash src="splash/android/xhdpi.png" gap:platform="android" gap:density="xhdpi" />-->
+  <!-- iOS -->
+  <!--<gap:splash src="splash/ios/Default_at_2x.png" width="640" height="960" />
+  <gap:splash src="splash/ios/Default_iphone5.png" width="640" height="1136" />
+  <gap:splash src="splash/ios/Default-Landscape.png" width="1024" height="768" />
+  <gap:splash src="splash/ios/Default-Portrait.png" width="768" height="1024" />
+  <gap:splash src="splash/ios/Default-Landscape.png" width="2048" height="1536" />
+  <gap:splash src="splash/ios/Default-Portrait.png" width="1536" height="2048" />-->
+  <!-- BB10 -->
+  <!-- <rim:splash src="splash-1024x600.png" />
+  <rim:splash src="splash-600x1024.png" />
+  <rim:splash src="splash-1280x768.png" />-->
+  <rim:splash src="assets/splash/768x1280.png" />
+  <!-- <rim:splash src="splash-720x720.png" />-->
+</widget>
