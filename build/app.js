@@ -8439,20 +8439,11 @@ document.addEventListener("offline", e, !1), document.addEventListener("online",
 }
 },
 create: function() {
-this.inherited(arguments), this.getPreferences(), this.online = navigator.onLine, this.log("online:", this.online), enyo.platform.firefox || (this.databaseOn = !0, this.createComponent({
-name: "mySongsDbase",
-kind: "onecrayon.Database",
-database: "ext:ms_database",
-version: "",
-estimatedSize: 5e6,
-debug: !0,
-owner: this
-}));
+this.inherited(arguments), this.getPreferences(), this.online = navigator.onLine, this.log("online:", this.online);
 if (Helper.browser()) {
 var e = enyo.bind(this, this.isOnline);
 window.addEventListener("offline", e, !1), window.addEventListener("online", e, !1), this.connect();
 }
-this.log("database on", this.databaseOn), this.databaseOn && this.openMyDatabase();
 },
 rendered: function() {
 this.inherited(arguments), this.log(), navigator.splashscreen && enyo.platform.android && setTimeout(function() {
@@ -9037,7 +9028,7 @@ i != -1 && this.requestAccessToken();
 }
 },
 fetch: function(e, t, n) {
-var r = "https://api.dropbox.com/", i = r + e, s = {
+var r = "https://api.dropbox.com/1/", i = r + e, s = {
 consumerKey: "969gyusfb2ogk5k",
 consumerSecret: "plhj5wou14eud8n",
 token: this.oauth_token,
@@ -9053,7 +9044,7 @@ parameters: o
 };
 OAuth.setTimestampAndNonce(u), OAuth.completeRequest(u, s), u.action = OAuth.addToURL(u.action, u.parameters);
 var a = {
-"X-Spring-Client": "OrganizeMe!",
+"X-Spring-Client": "my Songs",
 "Content-Type": "application/json; charset=UTF-8"
 };
 this.log("message: " + JSON.stringify(u)), this.$.webService1.setUrl(u.action), this.$.webService1.setMethod(u.method), this.$.webService1.setHeaders(a), n ? this.$.webService1.onSuccess = n : this.$.webService1.onSuccess = "webServiceSuccess", this.$.webService1.call();
