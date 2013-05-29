@@ -8361,6 +8361,7 @@ realtimeFit: !0,
 components: [ {
 kind: "Panels",
 name: "mainPanels",
+onTransitionFinish: "doResizeLyrics",
 classes: "app-panels inner-panels",
 arrangerKind: "CollapsingArranger",
 draggable: !1,
@@ -8439,11 +8440,20 @@ document.addEventListener("offline", e, !1), document.addEventListener("online",
 }
 },
 create: function() {
-this.inherited(arguments), this.getPreferences(), this.online = navigator.onLine, this.log("online:", this.online);
+this.inherited(arguments), this.getPreferences(), this.online = navigator.onLine, this.log("online:", this.online), enyo.platform.firefox || (this.databaseOn = !0, this.createComponent({
+name: "mySongsDbase",
+kind: "onecrayon.Database",
+database: "ext:ms_database",
+version: "",
+estimatedSize: 5e6,
+debug: !0,
+owner: this
+}));
 if (Helper.browser()) {
 var e = enyo.bind(this, this.isOnline);
 window.addEventListener("offline", e, !1), window.addEventListener("online", e, !1), this.connect();
 }
+this.log("database on", this.databaseOn), this.databaseOn && this.openMyDatabase();
 },
 rendered: function() {
 this.inherited(arguments), this.log(), navigator.splashscreen && enyo.platform.android && setTimeout(function() {
@@ -8976,92 +8986,6 @@ this.libraryList.content.splice(i, 1);
 break;
 }
 this.currentIndex = this.currentIndex === this.libraryList.content.length ? this.currentIndex - 1 : this.currentIndex, this.log("currentIndex", this.currentIndex), this.$.viewPane.$.viewPanels.setIndex(1), this.file = undefined, this.sortAndRefresh();
-}
-});
-
-// DropboxAuthPane.js
-
-enyo.kind({
-name: "DropboxAuthPane",
-kind: "FittableRows",
-classes: "bg",
-events: {
-onSuccess: ""
-},
-components: [ {
-name: "webService1",
-kind: "Classic.WebService",
-onSuccess: "webServiceSuccess",
-onFailure: "webServiceFailure",
-components: [ {
-method: "GET",
-handleAs: "json",
-contentType: "application/x-www-form-urlencoded"
-} ]
-}, {
-kind: enyo.Scroller,
-fit: !0,
-components: [ {
-name: "webView",
-fit: !0,
-touch: !0,
-tag: "iframe",
-onload: "frameload",
-attributes: {
-onload: enyo.bubbler
-},
-style: "background: rgba(255, 255, 255, 0.8); border-radius: .5rem; width: 100%; min-height: 100%;"
-} ]
-} ],
-loginToDropbox: function() {
-this.log(), this.fetch("oauth/request_token", "POST", null, null);
-},
-requestAccessToken: function() {
-this.log(), this.fetch("oauth/access_token", "POST", "webServicePostSuccess");
-},
-frameload: function(e, t) {
-if (e && e.node && e.node.contentDocument && e.node.contentDocument.domain == "sven-ziegler.com") {
-var n = e.node.contentDocument.URL;
-this.log("url: " + n);
-var r = "?oauth_token=", i = n.indexOf(r);
-i != -1 && this.requestAccessToken();
-}
-},
-fetch: function(e, t, n) {
-var r = "https://api.dropbox.com/1/", i = r + e, s = {
-consumerKey: "969gyusfb2ogk5k",
-consumerSecret: "plhj5wou14eud8n",
-token: this.oauth_token,
-tokenSecret: this.oauth_token_secret
-}, o = {
-oauth_timestamp: "",
-oauth_nonce: "",
-oauth_signature: ""
-}, u = {
-action: i,
-method: t,
-parameters: o
-};
-OAuth.setTimestampAndNonce(u), OAuth.completeRequest(u, s), u.action = OAuth.addToURL(u.action, u.parameters);
-var a = {
-"X-Spring-Client": "my Songs",
-"Content-Type": "application/json; charset=UTF-8"
-};
-this.log("message: " + JSON.stringify(u)), this.$.webService1.setUrl(u.action), this.$.webService1.setMethod(u.method), this.$.webService1.setHeaders(a), n ? this.$.webService1.onSuccess = n : this.$.webService1.onSuccess = "webServiceSuccess", this.$.webService1.call();
-},
-webServiceSuccess: function(e, t, n) {
-var r = OAuth.decodeForm(t.response);
-return this.oauth_token = r[0][1], this.oauth_token_secret = r[1][1], this.log("oauth_token: " + this.oauth_token), this.log("oauth_token_secret: " + this.oauth_token_secret), this.$.webView.setSrc("http://Dropbox.com/api/oauth-authorize?oauth_token_secret=" + this.oauth_token_secret + "&oauth_token=" + this.oauth_token), !0;
-},
-webServicePostSuccess: function(e, t, n) {
-var r = OAuth.decodeForm(t.response);
-return this.oauth_token = r[0][1], this.oauth_token_secret = r[1][1], localStorage.setItem("oauth_token", this.oauth_token), localStorage.setItem("oauth_token_secret", this.oauth_token_secret), this.log("oauth_token: " + this.oauth_token), this.doSuccess(), !0;
-},
-webServiceFailure: function(e, t, n) {
-this.error("inResponse: " + t.response);
-},
-zoomOut: function() {
-this.log(), this.owner.showView(Const.VIEW_WELCOME);
 }
 });
 
@@ -11277,11 +11201,6 @@ allowHtml: !1
 } ]
 } ]
 } ]
-}, {
-name: "dropboxAuthPane",
-kind: "DropboxAuthPane",
-draggable: !1,
-onSuccess: "completeLogin"
 } ]
 }, {
 name: "footerToolbar",
@@ -11468,12 +11387,6 @@ t.$[n].focus(), e && t.$[n].getSelection && (t.$[n].focus(), sel = t.$[n].getSel
 closeChordSelect: function() {
 var e = this.owner.$.viewPane.$.editToaster.$.lyricsPane;
 e.$[e.el].focus(), this.restoreSelection(e.elrange, e), e.$[e.el].insertAtCursor(this.getFullChord()), e.el = undefined;
-},
-showAuthPane: function() {
-this.applyStyle("max-width", "100%"), this.$.deleteButton.hide(), this.$.Pane.setIndex(7), this.$.title.setContent($L("Connect to Dropbox")), this.$.dropboxAuthPane.loginToDropbox();
-},
-completeLogin: function() {
-this.log("Login to Dropbox completed");
 },
 showImport: function() {
 this.applyStyle("max-width", "100%"), this.$.closeButton.setContent($L("Import")), this.$.deleteButton.setContent($L("Cancel")), this.$.deleteButton.show(), this.$.Pane.setIndex(6), this.$.importText.setValue(""), this.$.title.setContent($L("Import"));
