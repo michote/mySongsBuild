@@ -5638,7 +5638,7 @@ function Helper() {}
 
 Helper.app = "mySongs", Helper.vers = "0.5", Helper.ratio = function() {
 var e = enyo.platform;
-return e.blackberry ? "2.24" : e.android > 3 ? "1.5" : "1.0";
+return e.blackberry ? "2.24" : "1.0";
 }, Helper.iconPath = function() {
 return "assets/images/" + this.ratio() + "/";
 }, Helper.phone = function() {
