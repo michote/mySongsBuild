@@ -5636,12 +5636,10 @@ e.drawImage(this.image, this.bounds.l, this.bounds.t);
 
 function Helper() {}
 
-Helper.app = "mySongs", Helper.vers = "0.5", Helper.ratio = function() {
-var e = enyo.platform;
-return e.blackberry ? "2.24" : "1.0";
-}, Helper.iconPath = function() {
-return "assets/images/" + this.ratio() + "/";
-}, Helper.phone = function() {
+Helper.app = "mySongs", Helper.vers = "0.5", Helper.iconPath = "assets/images/1.00/", Helper.calcRatio = function() {
+var e = Math.round(window.devicePixelRatio).toFixed(2).toString();
+if (e === "1.50" || e === "2.00" || e === "2.24") Helper.iconPath = "assets/images/" + e + "/";
+}, Helper.ratio = Math.round(window.devicePixelRatio).toFixed(2), Helper.phone = function() {
 var e = enyo.platform;
 return window.innerWidth < 800 || e.blackberry ? !0 : !1;
 }, Helper.browser = function() {
@@ -8315,7 +8313,7 @@ this.cl.setFPS(this.fps);
 
 // MySongs.js
 
-enyo.kind({
+Helper.calcRatio(), enyo.kind({
 name: "mySongs",
 fit: !0,
 realtimeFit: !0,
@@ -8431,16 +8429,8 @@ ontap: "createSong"
 } ]
 } ]
 } ],
-deviceReadyHandler: function() {
-this.log("phonegap deviceready");
-if (!enyo.platform.webos) {
-this.connect();
-var e = enyo.bind(this, this.isOnline);
-document.addEventListener("offline", e, !1), document.addEventListener("online", e, !1);
-}
-},
 create: function() {
-this.inherited(arguments), this.getPreferences(), this.online = navigator.onLine, this.log("online:", this.online), enyo.platform.firefox || (this.databaseOn = !0, this.createComponent({
+enyo.warn(Helper.iconPath), this.inherited(arguments), this.getPreferences(), this.online = navigator.onLine, this.log("online:", this.online), enyo.platform.firefox || (this.databaseOn = !0, this.createComponent({
 name: "mySongsDbase",
 kind: "onecrayon.Database",
 database: "ext:ms_database",
@@ -8451,9 +8441,17 @@ owner: this
 }));
 if (Helper.browser()) {
 var e = enyo.bind(this, this.isOnline);
-window.addEventListener("offline", e, !1), window.addEventListener("online", e, !1), this.connect();
+window.addEventListener("offline", e, !1), window.addEventListener("online", e, !1), enyo.asyncMethod(this, "connect");
 }
-this.log("database on", this.databaseOn), this.databaseOn && this.openMyDatabase();
+this.log("database on", this.databaseOn), this.databaseOn && enyo.asyncMethod(this, "openMyDatabase");
+},
+deviceReadyHandler: function() {
+this.log("phonegap deviceready");
+if (!enyo.platform.webos) {
+this.connect();
+var e = enyo.bind(this, this.isOnline);
+document.addEventListener("offline", e, !1), document.addEventListener("online", e, !1);
+}
 },
 rendered: function() {
 this.inherited(arguments), this.log(), navigator.splashscreen && enyo.platform.android && setTimeout(function() {
@@ -8469,7 +8467,7 @@ setTimeout(t, 2e3);
 }
 },
 connect: function() {
-this.log("sync prefs: ", this.sync), this.sync !== "manual" && this.online ? dropboxHelper.client.uid ? this.readDirectory() : this.connectToDropbox() : this.databaseOn && this.initDatabaseRead();
+this.log("sync prefs: ", this.sync), this.sync !== "manual" && this.online ? dropboxHelper.client.uid ? enyo.asyncMethod(this, "readDirectory") : enyo.asyncMethod(this, "connectToDropbox") : this.databaseOn && enyo.asyncMethod(this, "initDatabaseRead");
 },
 connectToDropbox: function() {
 this.log("Connecting to Dropbox, please confirm the popup if any"), this.silent ? this.$.songListPane.$.searchSpinner.show() : (this.$.songListPane.$.readFiles.setContent($L("Connecting...")), this.$.songListPane.$.readProgress.setMax(3), this.$.songListPane.$.readProgress.animateProgressTo(1), this.$.songListPane.$.listPane.setIndex(0));
@@ -8479,13 +8477,13 @@ dropboxHelper.connect(e, t);
 }, 20);
 },
 refreshLibrary: function() {
-this.log("refreshing library ..."), this.libraryList.content = [], this.$.songListPane.$.library.setDisabled(!0), this.$.songListPane.$.library.setValue(!0), this.$.songListPane.$.list.setDisabled(!0), this.$.songListPane.goToSync(), this.online ? this.connect() : this.databaseOn && this.readFilesFromDatabase();
+this.log("refreshing library ..."), this.libraryList.content = [], this.$.songListPane.$.library.setDisabled(!0), this.$.songListPane.$.library.setValue(!0), this.$.songListPane.$.list.setDisabled(!0), enyo.asyncMethod(this.$.songListPane, "goToSync"), this.online ? enyo.asyncMethod(this, "connect") : this.databaseOn && enyo.asyncMethod(this, "readFilesFromDatabase");
 },
 connectError: function(e) {
-this.$.songListPane.showError($L("Connection error: ") + e), enyo.error("Connection error: ", e), this.$.songListPane.goToLibrary(), this.$.songListPane.$.library.setValue(!1), this.online = !1;
+this.$.songListPane.showError($L("Connection error: ") + e), enyo.error("Connection error: ", e), enyo.asyncMethod(this.$.songListPane, "goToLibrary"), this.$.songListPane.$.library.setValue(!1), this.online = !1;
 },
 dropboxError: function(e) {
-this.$.songListPane.showError($L("Dropbox error: ") + e), enyo.error("Dropbox error: ", e), this.$.songListPane.goToLibrary(), this.$.songListPane.$.library.setValue(!1);
+this.$.songListPane.showError($L("Dropbox error: ") + e), enyo.error("Dropbox error: ", e), enyo.asyncMethod(this.$.songListPane, "goToLibrary"), this.$.songListPane.$.library.setValue(!1);
 },
 signOut: function() {
 this.log("signing out from dropbox ...");
@@ -8529,7 +8527,7 @@ type: "TEXT"
 });
 },
 dbError: function() {
-this.log(), this.$.songListPane.goToLibrary(), this.$.songListPane.$.library.setValue(!1);
+this.log(), enyo.asyncMethod(this.$.songListPane, "goToLibrary"), this.$.songListPane.$.library.setValue(!1);
 },
 initDatabaseRead: function() {
 this.log(), this.$.songListPane.$.readFiles.setContent($L("Connecting...")), this.$.songListPane.$.readProgress.setMax(3), this.$.songListPane.$.readProgress.animateProgressTo(1), this.$.songListPane.$.listPane.setIndex(0), this.libraryList.content = [], this.readFilesFromDatabase();
@@ -8696,12 +8694,12 @@ dbfileNotUpdated: function(e) {
 this.log(e);
 },
 fileDone: function(e) {
-this.pathCount.b.push(1), this.log(this.pathCount.b.length, e), this.silent || this.$.songListPane.$.readProgress.animateProgressTo(this.pathCount.b.length), this.checkAllDone();
+this.pathCount.b.push(1), this.log(this.pathCount.b.length, e), this.silent || this.$.songListPane.$.readProgress.animateProgressTo(this.pathCount.b.length), enyo.asyncMethod(this, "checkAllDone");
 },
 checkAllDone: function() {
 this.log(this.pathCount.b.length, this.pathCount.a.length);
 if (this.pathCount.b.length === this.pathCount.a.length) {
-this.sortAndRefresh();
+enyo.asyncMethod(this, "sortAndRefresh");
 if (this.online && this.databaseOn) {
 var e = this.db.getSelect("songs", ""), t = enyo.bind(this, this.doExtraDbFiles);
 this.db.query(e, {
@@ -8757,27 +8755,28 @@ sortByTitle: function(e, t) {
 return e.title.toLowerCase() < t.title.toLowerCase() ? -1 : e.title.toLowerCase() > t.title.toLowerCase() ? 1 : 0;
 },
 sortAndRefresh: function(e) {
-this.log(), this.libraryList.content.sort(this.sortByTitle), this.$.songListPane.goToLibrary(), this.$.songListPane.$.library.setDisabled(!1), this.$.songListPane.$.list.setDisabled(!1), this.$.songListPane.$.library.setValue(!0), this.$.songListPane.$.searchSpinner.hide();
+this.log("file: ", e), this.libraryList.content.sort(this.sortByTitle), enyo.asyncMethod(this.$.songListPane, "goToLibrary"), this.$.songListPane.$.library.setDisabled(!1), this.$.songListPane.$.list.setDisabled(!1), this.$.songListPane.$.library.setValue(!0), this.$.songListPane.$.searchSpinner.hide();
 var t;
 if (e) {
-this.log("file to select", e);
 for (i in this.libraryList.content) if (this.libraryList.content[i].file === e) {
-t = i, this.currentIndex = i;
+this.log("found index:", i), t = i, this.currentIndex = i;
 break;
 }
 } else this.currentIndex && (t = this.currentIndex);
-t && this.silent ? (this.$.songListPane.$.libraryList.scrollToRow(t), this.$.songListPane.$[this.currentList === "searchList" ? "libraryList" : this.currentList].select(t)) : t && (this.log(t), this.$.songListPane.$[this.currentList === "searchList" ? "libraryList" : this.currentList].select(t), this.$.songListPane.$.libraryList.scrollToRow(t), this.openSong(t));
+this.log(t), t && this.silent ? (this.$.songListPane.$.libraryList.scrollToRow(t), this.$.songListPane.$[this.currentList === "searchList" ? "libraryList" : this.currentList].select(t)) : t && (this.$.songListPane.$[this.currentList === "searchList" ? "libraryList" : this.currentList].select(t), this.$.songListPane.$.libraryList.scrollToRow(t), this.log(this.$.songListPane.$[this.currentList === "searchList" ? "libraryList" : this.currentList].select(t)), this.log(this.$.songListPane.$.libraryList.scrollToRow(t)), enyo.asyncMethod(this, "openSong", t));
 },
 findIndex: function() {
-for (i in this.libraryList.content) if (this.searchList.content.length > 0 && this.currentIndex >= 0 && this.libraryList.content[i].file === this.searchList.content[this.currentIndex].file) {
+for (i in this.libraryList.content) if (this.searchList.content[this.currentIndex] && this.currentIndex >= 0 && this.libraryList.content[i].file === this.searchList.content[this.currentIndex].file) {
 this.setCurrentIndex(i);
 break;
 }
 },
 openSong: function(e) {
-this.log("list ", this.currentList);
+!Helper.phone() || this.$.mainPanels.setIndex(1), this.$.viewPane.$.viewPanels.getIndex() !== 1 ? (this.$.viewPane.$.viewPanels.setIndex(1), enyo.asyncMethod(this, "openSongData", e)) : this.openSongData(e);
+},
+openSongData: function(e) {
 var t = this.currentList === "customList" ? this.savedLists.data[this.customList].content[e].file : this[this.currentList].content[e].file;
-this.log("open song: ", t), this.$.viewPane.$.songViewPane.setFirst(!0), this.$.viewPane.$.songViewPane.setFile(t), this.$.viewPane.$.songViewPane.start(), this.$.viewPane.$.songViewPane.$.viewScroller.setScrollTop(0), this.$.viewPane.$.viewPanels.setIndex(1), this.handleSidepane(), !Helper.phone() || this.$.mainPanels.setIndex(1);
+this.log("open song: ", t), this.$.viewPane.$.songViewPane.setFirst(!0), this.$.viewPane.$.songViewPane.setFile(t), this.$.viewPane.$.songViewPane.start(), this.$.viewPane.$.songViewPane.$.viewScroller.setScrollTop(0), enyo.asyncMethod(this, "handleSidepane");
 },
 handleSidepane: function() {
 this.log("sidepane: ", this.$.sidePane.$.Pane.getIndex());
@@ -8815,7 +8814,7 @@ Helper.setItem("css", e), this.log("saved: css", e);
 },
 setFont: function(e) {
 if (e) {
-var t = e.size * 10 * Helper.ratio() + 80 + "%", n = e.space * 8 + 100 + "%";
+var t = e.size * 10 * Helper.ratio + 80 + "%", n = e.space * 8 + 100 + "%";
 this.log("set font css: size: ", t, "space: ", n), this.$.viewPane.$.songViewPane.$.lyric.applyStyle("font-size", t), this.$.viewPane.$.songViewPane.$.lyric.applyStyle("line-height", n), this.$.viewPane.$.songViewPane.lyricDataSet(), this.$.viewPane.$.help.$.helpContent.applyStyle("font-size", t);
 }
 },
@@ -8892,7 +8891,7 @@ break;
 }
 if (this.libraryList.content[i].file === t) break;
 }
-this.dataList[t.toLowerCase()] = ParseXml.parse_dom(n), this.sortAndRefresh(t);
+this.dataList[t.toLowerCase()] = ParseXml.parse_dom(n), enyo.asyncMethod(this, "sortAndRefresh", t);
 }
 },
 openCreateSong: function() {
@@ -8930,10 +8929,10 @@ t = this.testFilename(t), this.log("create file: ", t), this.newSong = !0;
 if (this.online) {
 var n = enyo.bind(this, this.gotTxtFile, t, e), r = enyo.bind(this, this.contCreateSong, t, e, "");
 dropboxHelper.readFile(e + ".txt", n, r);
-} else this.contCreateSong(t, e, "");
+} else enyo.asyncMethod(this, "contCreateSong", t, e, "");
 },
 gotTxtFile: function(e, t, n, r) {
-this.log(r), n ? this.contCreateSong(e, t, n) : this.contCreateSong(e, t, "");
+this.log(r), n ? enyo.asyncMethod(this, "contCreateSong", e, t, n) : enyo.asyncMethod(this, "contCreateSong", e, t, "");
 },
 contCreateSong: function(e, t, n) {
 this.log(t);
@@ -8948,7 +8947,7 @@ var t = enyo.bind(this, this.dropboxError), n = enyo.bind(this, this.deleteFromD
 setTimeout(function() {
 dropboxHelper.deleteFile(e, n, t);
 }, 10);
-} else this.deleteFromDbase();
+} else enyo.asyncMethod(this, "deleteFromDbase");
 var r = !1;
 for (i in this.savedLists.data) for (j in this.savedLists.data[i].content) this.savedLists.data[i].content[j].file === e && (this.savedLists.data[i].content.splice(j, 1), this.log(e, "removed from savedLists"), r = !0);
 r && (this.saveLists(), this.currentList === "customList" && this.$.songListPane.$.customList.reset());
@@ -8977,7 +8976,7 @@ action: "deleted"
 onSuccess: n,
 onError: t
 });
-} else this.deleteSuccess();
+} else enyo.asyncMethod(this, "deleteSuccess");
 },
 deleteSuccess: function() {
 this.log(this.file, "deleted"), delete this.dataList[this.file.toLowerCase()];
@@ -8985,7 +8984,7 @@ for (i in this.libraryList.content) if (this.libraryList.content[i].file === thi
 this.libraryList.content.splice(i, 1);
 break;
 }
-this.currentIndex = this.currentIndex === this.libraryList.content.length ? this.currentIndex - 1 : this.currentIndex, this.log("currentIndex", this.currentIndex), this.$.viewPane.$.viewPanels.setIndex(1), this.file = undefined, this.sortAndRefresh();
+this.currentIndex = this.currentIndex === this.libraryList.content.length ? this.currentIndex - 1 : this.currentIndex, this.log("currentIndex", this.currentIndex), this.$.viewPane.$.viewPanels.setIndex(1), this.file = undefined, enyo.asyncMethod(this, "sortAndRefresh");
 }
 });
 
@@ -9246,7 +9245,7 @@ ontap: "logTapped"
 name: "spinner",
 kind: "jmtk.Spinner",
 color: "#000000",
-diameter: Helper.ratio() * 32,
+diameter: Helper.ratio * 32,
 style: "margin-right: .5rem; height: 2rem; display: inline-block; float: right;"
 } ]
 } ]
@@ -9347,14 +9346,14 @@ classes: "searchbuttons",
 components: [ {
 name: "prefsButton",
 kind: "onyx.IconButton",
-src: Helper.iconPath() + "prefs.png",
+src: Helper.iconPath + "prefs.png",
 style: "float: right;",
 classes: "hochk",
 ontap: "showMenu"
 }, {
 name: "searchButton",
 kind: "onyx.ToggleIconButton",
-src: Helper.iconPath() + "search.png",
+src: Helper.iconPath + "search.png",
 style: "float: right",
 onChange: "extendSearch",
 disabled: !0
@@ -9365,7 +9364,7 @@ showing: !1,
 components: [ {
 kind: "jmtk.Spinner",
 color: "#FFFFFF",
-diameter: Helper.ratio() * 30
+diameter: Helper.ratio * 30
 } ]
 } ]
 } ]
@@ -9397,7 +9396,7 @@ name: "titles",
 style: "width: 25%;",
 components: [ {
 kind: "onyx.Icon",
-src: Helper.iconPath() + "title-help.png"
+src: Helper.iconPath + "title-help.png"
 } ],
 active: !0
 }, {
@@ -9405,21 +9404,21 @@ name: "authors",
 style: "width: 25%;",
 components: [ {
 kind: "onyx.Icon",
-src: Helper.iconPath() + "author-help.png"
+src: Helper.iconPath + "author-help.png"
 } ]
 }, {
 name: "lyrics",
 style: "width: 25%;",
 components: [ {
 kind: "onyx.Icon",
-src: Helper.iconPath() + "lyrics-help.png"
+src: Helper.iconPath + "lyrics-help.png"
 } ]
 }, {
 name: "keys",
 style: "width: 25%;",
 components: [ {
 kind: "onyx.Icon",
-src: Helper.iconPath() + "key-help.png"
+src: Helper.iconPath + "key-help.png"
 } ]
 } ]
 } ]
@@ -9496,7 +9495,7 @@ style: "text-align: center;",
 components: [ {
 kind: "jmtk.Spinner",
 color: "#9E0508",
-diameter: Helper.ratio() * 90
+diameter: Helper.ratio * 90
 }, {
 name: "readProgress",
 kind: "onyx.ProgressBar",
@@ -9698,7 +9697,7 @@ style: "width: 100%; margin: 0; padding: 0;",
 components: [ {
 name: "open",
 kind: "onyx.ToggleIconButton",
-src: Helper.iconPath() + "open.png",
+src: Helper.iconPath + "open.png",
 onChange: "openListManager",
 disabled: !0
 }, {
@@ -9708,20 +9707,20 @@ style: "margin: 0; padding: 0; text-align: center;",
 components: [ {
 name: "library",
 kind: "onyx.ToggleIconButton",
-src: Helper.iconPath() + "library.png",
+src: Helper.iconPath + "library.png",
 onChange: "goToLibrary",
 disabled: !0
 }, {
 name: "list",
 kind: "onyx.ToggleIconButton",
-src: Helper.iconPath() + "list.png",
+src: Helper.iconPath + "list.png",
 onChange: "goToList",
 disabled: !0
 } ]
 }, {
 name: "addRem",
 kind: "onyx.IconButton",
-src: Helper.iconPath() + "add.png",
+src: Helper.iconPath + "add.png",
 ontap: "addRem",
 disabled: !0
 } ]
@@ -9737,8 +9736,11 @@ connect: function() {
 this.owner.connectToDropbox();
 },
 getLibrary: function(e, t) {
-var n = this.owner[this.owner.currentList === "searchList" ? "searchList" : "libraryList"].content[t.index], r = e.isSelected(t.index);
+var n = this.owner[this.owner.currentList === "searchList" ? "searchList" : "libraryList"].content[t.index];
+if (n) {
+var r = e.isSelected(t.index);
 this.$.libraryListItem.addRemoveClass("item-selected", r), this.$.libraryListItem.addRemoveClass("item-not-selected", !r), this.$.libraryListTitle.setContent(n.title);
+}
 },
 listTab: function(e, t) {
 this.$[this.owner.currentList === "searchList" ? "libraryList" : this.owner.currentList].select(t.rowIndex);
@@ -9792,7 +9794,7 @@ var n = this.owner.savedLists.data[t.index], r = e.isSelected(t.index);
 this.$.listNameItem.addRemoveClass("item-selected", r), this.$.listNameItem.addRemoveClass("item-not-selected", !r), this.$.listNameTitle.setContent(n.title + " (" + n.content.length + ")");
 },
 manageTab: function(e, t) {
-this.listIndex = t.rowIndex, this.owner.customList = t.rowIndex, Helper.setItem("customList", t.rowIndex), this.$.list.setValue(!0), this.goToList();
+this.listIndex = t.rowIndex, this.owner.customList = t.rowIndex, Helper.setItem("customList", t.rowIndex), this.$.list.setValue(!0), enyo.asyncMethod(this, "goToList");
 },
 manageListReorder: function(e, t) {
 var n = this.owner.savedLists.data, r = enyo.clone(n[t.reorderFrom]);
@@ -9816,7 +9818,7 @@ extendSearch: function() {
 this.$.searchBar.setOpen(!this.$.searchBar.open), this.$.searchSpinner.setShowing(this.$.searchBar.open), this.$.searchBar.open ? (this.closeError(), this.$.searchBox.focus()) : this.clearSearch();
 },
 clearSearch: function() {
-this.log(), this.owner.currentList = "libraryList", this.goToLibrary(), this.owner.findIndex(), this.$.searchBox.setValue(""), this.$.searchSpinner.hide(), this.$.list.setDisabled(!1);
+this.log(), this.owner.currentList = "libraryList", enyo.asyncMethod(this, "goToLibrary"), enyo.asyncMethod(this.owner, "findIndex"), this.$.searchBox.setValue(""), this.$.searchSpinner.hide(), this.$.list.setDisabled(!1);
 },
 closeSearch: function() {
 this.clearSearch(), this.$.searchBar.setOpen(!1), this.$.searchButton.setValue(!1);
@@ -9845,19 +9847,19 @@ closePerformance: function() {
 this.running || this.$.performanceDrawer.setOpen(!1);
 },
 goToSync: function() {
-this.log(), this.closeError(), this.$.newList.setOpen(!1), this.$.searchBar.setOpen(!1), this.$.searchButton.setValue(!1), this.owner.currentList = "libraryList", this.$.libraryList.setCount(0), this.$.title.setContent($L("Song List")), this.$.open.setValue(!1), this.$.addRem.setSrc(Helper.iconPath() + "add.png"), this.$.searchButton.setDisabled(!0), this.$.addRem.setDisabled(!0), this.$.open.setDisabled(!0), this.$.list.setValue(!1), this.$.listPane.setIndex(0);
+this.log(), this.closeError(), this.$.newList.setOpen(!1), this.$.searchBar.setOpen(!1), this.$.searchButton.setValue(!1), this.owner.currentList = "libraryList", this.$.libraryList.setCount(0), this.$.title.setContent($L("Song List")), this.$.open.setValue(!1), this.$.addRem.setSrc(Helper.iconPath + "add.png"), this.$.searchButton.setDisabled(!0), this.$.addRem.setDisabled(!0), this.$.open.setDisabled(!0), this.$.list.setValue(!1), this.$.listPane.setIndex(0);
 },
 goToLibrary: function() {
-this.log(), this.$.newList.setOpen(!1), this.$.searchButton.setDisabled(!1), this.owner.currentList = "libraryList", this.$.title.setContent($L("Song List") + " (" + this.owner.libraryList.content.length + ")"), this.$.libraryList.setCount(this.owner.libraryList.content.length), this.$.libraryList.reset(), this.$.open.setValue(!1), this.$.addRem.setSrc(Helper.iconPath() + "add.png"), this.$.addRem.setDisabled(!1), this.$.open.setDisabled(!1), this.$.list.setValue(!1), this.$.listPane.setIndex(1);
+this.log(), this.$.newList.setOpen(!1), this.$.searchButton.setDisabled(!1), this.owner.currentList = "libraryList", this.$.title.setContent($L("Song List") + " (" + this.owner.libraryList.content.length + ")"), this.$.libraryList.setCount(this.owner.libraryList.content.length), this.$.libraryList.reset(), this.$.open.setValue(!1), this.$.addRem.setSrc(Helper.iconPath + "add.png"), this.$.addRem.setDisabled(!1), this.$.open.setDisabled(!1), this.$.list.setValue(!1), this.$.listPane.setIndex(1);
 },
 goToList: function() {
-this.log(), this.$.newList.setOpen(!1), this.$.searchBar.setOpen(!1), this.$.searchButton.setValue(!1), this.$.searchButton.setDisabled(!0), this.$.library.setValue(!1), this.$.customList.reset(), enyo.warn(this.owner.savedLists.data[this.owner.customList]), this.owner.savedLists.data[this.owner.customList] ? (this.owner.currentList = "customList", this.owner.setCurrentIndex(undefined), this.$.title.setContent(this.owner.savedLists.data[this.owner.customList].title + " (" + this.owner.savedLists.data[this.owner.customList].content.length + ")"), this.$.performanceText.setContent("<big><b>" + this.owner.savedLists.data[this.owner.customList].content.length + " " + $L("title") + "</b></big><br> Total duration:  s"), this.$.addRem.setSrc(Helper.iconPath() + "remove.png"), this.$.open.setValue(!1), this.$.addRem.setDisabled(!1), this.$.listPane.setIndex(2), this.$.customList.setCount(this.owner.savedLists.data[this.owner.customList].content.length), this.$.customList.refresh()) : this.noList();
+this.log(), this.$.newList.setOpen(!1), this.$.searchBar.setOpen(!1), this.$.searchButton.setValue(!1), this.$.searchButton.setDisabled(!0), this.$.library.setValue(!1), this.$.customList.reset(), enyo.warn(this.owner.savedLists.data[this.owner.customList]), this.owner.savedLists.data[this.owner.customList] ? (this.owner.currentList = "customList", this.owner.setCurrentIndex(undefined), this.$.title.setContent(this.owner.savedLists.data[this.owner.customList].title + " (" + this.owner.savedLists.data[this.owner.customList].content.length + ")"), this.$.performanceText.setContent("<big><b>" + this.owner.savedLists.data[this.owner.customList].content.length + " " + $L("title") + "</b></big><br> Total duration:  s"), this.$.addRem.setSrc(Helper.iconPath + "remove.png"), this.$.open.setValue(!1), this.$.addRem.setDisabled(!1), this.$.listPane.setIndex(2), this.$.customList.setCount(this.owner.savedLists.data[this.owner.customList].content.length), this.$.customList.refresh()) : this.noList();
 },
 openListManager: function() {
-this.log(), this.closeError(), this.$.searchBar.setOpen(!1), this.$.searchButton.setValue(!1), this.$.searchButton.setDisabled(!0), this.$.addRem.setDisabled(!1), this.$.listPane.setIndex(3), this.owner.$.viewPane.$.viewPanels.setIndex(0), this.$.title.setContent($L("Manage Lists")), this.$.open.setValue(!0), this.$.addRem.setSrc(Helper.iconPath() + "add.png"), this.owner.currentList === "customList" ? this.$.list.setValue(!1) : this.$.library.setValue(!1), this.$.customListList.setCount(this.owner.savedLists.data.length), this.$.customListList.reset();
+this.log(), this.closeError(), this.$.searchBar.setOpen(!1), this.$.searchButton.setValue(!1), this.$.searchButton.setDisabled(!0), this.$.addRem.setDisabled(!1), this.$.listPane.setIndex(3), this.owner.$.viewPane.$.viewPanels.setIndex(0), this.$.title.setContent($L("Manage Lists")), this.$.open.setValue(!0), this.$.addRem.setSrc(Helper.iconPath + "add.png"), this.owner.currentList === "customList" ? this.$.list.setValue(!1) : this.$.library.setValue(!1), this.$.customListList.setCount(this.owner.savedLists.data.length), this.$.customListList.reset();
 },
 noList: function() {
-this.log(), this.closeError(), this.$.listPane.setIndex(4), this.$.title.setContent($L("List?")), this.$.addRem.setSrc(Helper.iconPath() + "add.png"), this.$.addRem.setDisabled(!0), this.$.list.setValue(!1), this.owner.currentList === "customList" ? this.$.list.setValue(!1) : this.$.library.setValue(!1);
+this.log(), this.closeError(), this.$.listPane.setIndex(4), this.$.title.setContent($L("List?")), this.$.addRem.setSrc(Helper.iconPath + "add.png"), this.$.addRem.setDisabled(!0), this.$.list.setValue(!1), this.owner.currentList === "customList" ? this.$.list.setValue(!1) : this.$.library.setValue(!1);
 },
 addRem: function() {
 this.log(this.$.listPane.getIndex());
@@ -9879,7 +9881,7 @@ removeFromCustomlist: function(e) {
 e >= 0 && (this.log("remove", this.owner.savedLists.data[this.owner.customList].content[e].title, "from", this.owner.savedLists.data[this.owner.customList]), this.owner.savedLists.data[this.owner.customList].content.splice(e, 1), this.$.customList.setCount(this.owner.savedLists.data[this.owner.customList].content.length), this.$.customList.refresh(), this.$.title.setContent(this.owner.savedLists.data[this.owner.customList].title + " (" + this.owner.savedLists.data[this.owner.customList].content.length + ")"), this.owner.saveLists());
 },
 refreshAllLists: function() {
-this.$.customList.setCount(this.owner.savedLists.data[this.owner.customList].content.length), this.$.customList.reset(), this.$.customListList.reset();
+this.owner.savedLists.data[this.owner.customList] && this.$.customList.setCount(this.owner.savedLists.data[this.owner.customList].content.length), this.$.customList.reset(), this.$.customListList.reset();
 },
 showError: function(e) {
 this.$.error.setOpen(!0), this.$.errorText.setContent(e.substring(0, 300) + "...");
@@ -9914,7 +9916,7 @@ realtimeFit: !0,
 classes: "bg",
 components: [ {
 kind: "Image",
-src: Helper.iconPath() + "bg.png",
+src: Helper.iconPath + "bg.png",
 classes: "plec"
 }, {
 name: "viewPanels",
@@ -9956,7 +9958,7 @@ style: "width: " + (Helper.phone() ? .5 : 1) + "rem; border-left: .0625rem solid
 }), enyo.kind({
 name: "my.Grabber",
 kind: "onyx.IconButton",
-src: Helper.iconPath() + "grabber.png",
+src: Helper.iconPath + "grabber.png",
 style: "float: left;"
 });
 
@@ -10062,7 +10064,7 @@ kind: "FittableColumns",
 components: [ {
 name: "transminus",
 kind: "onyx.IconButton",
-src: Helper.iconPath() + "minus.png",
+src: Helper.iconPath + "minus.png",
 style: "width: 1.25rem;",
 ontap: "transMinus",
 disabled: !0
@@ -10075,7 +10077,7 @@ ontap: "transButton"
 }, {
 kind: "onyx.IconButton",
 name: "transplus",
-src: Helper.iconPath() + "plus.png",
+src: Helper.iconPath + "plus.png",
 style: "width: 1.25rem;",
 ontap: "transPlus",
 disabled: !0
@@ -10085,12 +10087,12 @@ kind: "my.Spacer"
 }, {
 name: "fontButton",
 kind: "onyx.IconButton",
-src: Helper.iconPath() + "font.png",
+src: Helper.iconPath + "font.png",
 ontap: "showFontDialog"
 }, {
 name: "prefsButton",
 kind: "onyx.IconButton",
-src: Helper.iconPath() + "prefs.png",
+src: Helper.iconPath + "prefs.png",
 ontap: "showMenu"
 } ]
 } ]
@@ -10168,7 +10170,7 @@ components: [ {
 name: "backButton",
 kind: "onyx.IconButton",
 disabled: !0,
-src: Helper.iconPath() + "back.png",
+src: Helper.iconPath + "back.png",
 ontap: "textBack"
 }, {
 style: "width: " + (Helper.phone() ? .75 : 2) + "rem;"
@@ -10176,7 +10178,7 @@ style: "width: " + (Helper.phone() ? .75 : 2) + "rem;"
 name: "forthButton",
 kind: "onyx.IconButton",
 disabled: !0,
-src: Helper.iconPath() + "forth.png",
+src: Helper.iconPath + "forth.png",
 ontap: "textForth"
 } ]
 }, {
@@ -10188,25 +10190,25 @@ components: [ {
 name: "playButton",
 kind: "onyx.IconButton",
 toggling: !0,
-src: Helper.iconPath() + "play.png",
+src: Helper.iconPath + "play.png",
 ontap: "togglePlay"
 }, {
 fit: !0
 }, {
 name: "printButton",
 kind: "onyx.IconButton",
-src: Helper.iconPath() + "print.png",
+src: Helper.iconPath + "print.png",
 ontap: "print",
 showing: Helper.browser()
 }, {
 name: "editButton",
 kind: "onyx.IconButton",
-src: Helper.iconPath() + "edit.png",
+src: Helper.iconPath + "edit.png",
 ontap: "openEdit"
 }, {
 name: "infoButton",
 kind: "onyx.IconButton",
-src: Helper.iconPath() + "info.png",
+src: Helper.iconPath + "info.png",
 ontap: "showInfo"
 } ]
 } ]
@@ -10216,18 +10218,18 @@ create: function() {
 this.inherited(arguments);
 },
 showPrefsChanged: function() {
-this.xml ? this.renderLyrics() : this.buttons();
+this.xml ? this.start() : this.buttons();
 },
 buttons: function() {
 this.log("redraw buttons"), this.$.backButton.setShowing(this.showPrefs.showScroll), this.$.forthButton.setShowing(this.showPrefs.showScroll), this.$.transposergr.setShowing(this.showPrefs.showTransposer), this.$.playButton.setShowing(this.showPrefs.showAuto), this.$.printButton.setShowing(Helper.browser() ? this.showPrefs.showPrint : !1), this.$.buttonfit.resized();
 },
 start: function() {
-this.renderLyrics(), this.initCursor();
+enyo.asyncMethod(this, "renderLyrics"), this.showPrefs.showAuto ? (enyo.asyncMethod(this, "initCursor"), this.$.cursorScrollBar.show()) : this.$.cursorScrollBar.hide();
 },
 renderLyrics: function() {
 this.xml = this.owner.owner.dataList[this.file.toLowerCase()], this.lang = undefined, this.log("render lyrics of", this.file), this.buttons(), this.$.transposeList.applyStyle("visibility", "hidden");
 var e = ParseXml.get_metadata(this.xml, "transposition");
-e && this.first ? (this.transpose = parseInt(e), this.first = !1) : this.first ? (this.transpose = 0, this.first = !1) : this.first = !1, this.data = ParseXml.parse(this.xml, this.showPrefs.showChords, this.showPrefs.showComments, this.transpose), this.log("get data"), this.data.titles !== undefined && (this.textIndex = 0, this.scroll = 0, this.$.languagegr.destroyClientControls(), this.$.trSpacer.hide(), this.data.haslang[0] && (this.createLangToggle(this.data.haslang), this.$.trSpacer.show(), this.$.languagegr.render()), this.metaDataSet(), this.lyricDataSet(), this.enableTransposer(this.data.key, this.data.haschords, this.transpose), this.finished && (this.$.editButton.setDisabled(!1), this.$.printButton.setDisabled(!1), this.$.backButton.setDisabled(!0), this.data.verseOrder && this.textIndex === this.data.verseOrder.length - 1 ? this.$.forthButton.setDisabled(!0) : this.$.forthButton.setDisabled(!1))), this.$.titlefit.resized();
+e && this.first ? (this.transpose = parseInt(e), this.first = !1) : this.first ? (this.transpose = 0, this.first = !1) : this.first = !1, this.data = ParseXml.parse(this.xml, this.showPrefs.showChords, this.showPrefs.showComments, this.transpose), this.log("get data"), this.data.titles !== undefined && (this.textIndex = 0, this.scroll = 0, this.$.languagegr.destroyClientControls(), this.$.trSpacer.hide(), this.data.haslang[0] && (this.createLangToggle(this.data.haslang), this.$.trSpacer.show(), this.$.languagegr.render()), enyo.asyncMethod(this, "metaDataSet"), enyo.asyncMethod(this, "lyricDataSet"), enyo.asyncMethod(this, "enableTransposer", this.data.key, this.data.haschords, this.transpose), this.finished && (this.$.editButton.setDisabled(!1), this.$.printButton.setDisabled(!1), this.$.backButton.setDisabled(!0), this.data.verseOrder && this.textIndex === this.data.verseOrder.length - 1 ? this.$.forthButton.setDisabled(!0) : this.$.forthButton.setDisabled(!1)));
 },
 getTranspose: function(e, t) {
 var n = this.transposeList[t.index], r = e.isSelected(t.index);
@@ -10239,6 +10241,7 @@ this.log("enable Transposer"), this.$.transminus.setDisabled(!1), this.$.transpl
 for (i in this.transposeList) this.transposeList[i] === e && this.$.transposeList.select(i);
 this.$.transposer.setContent(n ? Transposer.transpose(e, n) : e), this.$.transposer.show();
 } else !e && t ? (this.log("enable Transposer without key"), this.$.transminus.setDisabled(!1), this.$.transplus.setDisabled(!1), this.$.transposer.hide()) : (this.$.transminus.setDisabled(!0), this.$.transplus.setDisabled(!0), this.$.transposer.hide());
+this.$.titlefit.resized();
 },
 transButton: function() {
 this.$.transposeList.applyStyle("visibility", "visible");
@@ -10266,7 +10269,7 @@ addLangToggle: function(e) {
 this.log("add", e, "toggle"), this.$.languagegr.createComponent({
 name: e,
 kind: "onyx.IconButton",
-src: Helper.iconPath() + "flag.png",
+src: Helper.iconPath + "flag.png",
 owner: this,
 components: [ {
 content: e,
@@ -10343,7 +10346,7 @@ classes: "scrollspacer"
 this.$.lyric.render();
 },
 togglePlay: function() {
-this.log(), this.tapTimer2 = undefined, this.$.playButton.src === Helper.iconPath() + "play.png" ? (this.lyricsCurrRow !== 0 ? (this.running = !0, this.resetStartTime(), this.showLyrics(!1)) : (this.initForTextPlay(), this.$.cursorScrollBar.cursorOn(), this.running = !0, this.finished = !1, this.perRowMSecs = 1e3 * this.songSecs / this.rowsTraversed, this.log("Require to scroll a row per", this.perRowMSecs, "mSecs. duration", this.songSecs), this.resetStartTime(), this.showLyrics(!0)), this.$.playButton.set("src", Helper.iconPath() + "pause.png"), this.$.forthButton.setDisabled(!1), this.$.forthButton.setDisabled(!0), this.$.backButton.setDisabled(!0), this.$.printButton.setDisabled(!0)) : (this.$.playButton.set("src", Helper.iconPath() + "play.png"), this.running = !1, this.finished && (this.initCursor(), this.showPrefs.scrollToNext && this.nextSong()));
+this.log(), this.tapTimer2 = undefined, this.$.playButton.src === Helper.iconPath + "play.png" ? (this.lyricsCurrRow !== 0 ? (this.running = !0, this.resetStartTime(), this.showLyrics(!1)) : (this.initForTextPlay(), this.$.cursorScrollBar.cursorOn(), this.running = !0, this.finished = !1, this.perRowMSecs = 1e3 * this.songSecs / this.rowsTraversed, this.log("Require to scroll a row per", this.perRowMSecs, "mSecs. duration", this.songSecs), this.resetStartTime(), this.showLyrics(!0)), this.$.playButton.set("src", Helper.iconPath + "pause.png"), this.$.forthButton.setDisabled(!1), this.$.forthButton.setDisabled(!0), this.$.backButton.setDisabled(!0), this.$.printButton.setDisabled(!0)) : (this.$.playButton.set("src", Helper.iconPath + "play.png"), this.running = !1, this.finished && (this.initCursor(), this.showPrefs.scrollToNext && this.nextSong()));
 },
 movingLyrics: function() {
 return this.lyricsCurrRow > this.halfHt && this.lyricsCurrRow < this.rowsTraversed - this.halfHt ? !0 : !1;
@@ -10377,9 +10380,10 @@ enyo.requestAnimationFrame(enyo.bind(n, "showLyrics", !1));
 }, this.perRowMSecs);
 }
 } else this.diffTime = this.currTime - this.initTime;
+enyo.asyncMethod(this, "resizeHandler");
 },
 initCursor: function() {
-this.log(), this.cursorRow = 0, this.lyricsCurrRow = 0, this.$.viewScroller.setScrollTop(this.lyricsCurrRow), this.$.cursorScrollBar.setY(this.cursorRow), this.$.cursorScrollBar.cursorOff(), window.clearTimeout(this.scrollTimeout), this.$.playButton.setProperty("src", Helper.iconPath() + "play.png"), this.running = !1, this.finished = !1, this.$.editButton.setDisabled(!1), this.$.fontButton.setDisabled(!1), this.$.forthButton.setDisabled(!1), this.$.backButton.setDisabled(!1), this.$.printButton.setDisabled(!1), this.resizeHandler();
+this.log(), this.cursorRow = 0, this.lyricsCurrRow = 0, this.$.viewScroller.setScrollTop(this.lyricsCurrRow), this.$.cursorScrollBar.setY(this.cursorRow), this.$.cursorScrollBar.cursorOff(), window.clearTimeout(this.scrollTimeout), this.$.playButton.setProperty("src", Helper.iconPath + "play.png"), this.running = !1, this.finished = !1, this.$.editButton.setDisabled(!1), this.$.fontButton.setDisabled(!1), this.$.forthButton.setDisabled(!1), this.$.backButton.setDisabled(!1), this.$.printButton.setDisabled(!1), this.resizeHandler();
 },
 resizeHandler: function() {
 this.inherited(arguments), this.log();
@@ -10389,8 +10393,8 @@ if (this.$.lyric.node !== null && this.owner.owner.$.sidePane.css.autoResize ===
 this.log();
 var t = 100;
 this.$.lyric.applyStyle("font-size", t + "%"), this.$.lyric.applyStyle("display", "inline-block");
-var n = t * (this.$.lyric.owner.width - 108) / (this.$.lyric.node.clientWidth - 72), r = this.owner.owner.$.sidePane.css.fMin * 10 * Helper.ratio() + 80;
-n = n < r ? r : n, r = this.owner.owner.$.sidePane.css.fMax * 10 * Helper.ratio() + 80, n = n > r ? r : n, this.$.lyric.applyStyle("font-size", Math.floor(n) + "%"), this.$.lyric.applyStyle("display", "block");
+var n = t * (this.$.lyric.owner.width - 108) / (this.$.lyric.node.clientWidth - 72), r = this.owner.owner.$.sidePane.css.fMin * 10 * Helper.ratio + 80;
+n = n < r ? r : n, r = this.owner.owner.$.sidePane.css.fMax * 10 * Helper.ratio + 80, n = n > r ? r : n, this.$.lyric.applyStyle("font-size", Math.floor(n) + "%"), this.$.lyric.applyStyle("display", "block");
 }
 if (e) {
 var s = 0;
@@ -10401,7 +10405,7 @@ for (i = 0; i < e.length; i++) e[i].style.width = s + "px";
 initForTextPlay: function() {
 this.log();
 var e = this.$.lyric.getControls();
-this.resizeLyrics(), this.rowsTraversed = this.$.lyric.node.clientHeight;
+this.rowsTraversed = this.$.lyric.node.clientHeight;
 for (i = 0; i < e.length; i++) e[i].name === "scrollspacer" && (this.rowsTraversed = this.rowsTraversed - this.$.lyric.node.lastChild.clientHeight + 20);
 this.halfHt = this.$.viewScroller.node.clientHeight / 2, this.$.viewScroller.setScrollTop(this.lyricsCurrRow), this.$.cursorScrollBar.$.canvas.setAttribute("height", this.$.viewScroller.node.clientHeight), this.songSecs = this.data.duration ? this.data.duration : this.defaultSongSecs, this.$.cursorScrollBar.cursorOff(), this.$.cursorScrollBar.hasNode().height = this.$.viewScroller.node.clientHeight, this.$.editButton.setDisabled(!0), this.$.fontButton.setDisabled(!0);
 },
@@ -10410,24 +10414,24 @@ var e = this.$[this.order[this.textIndex]].hasNode(), t = Helper.calcNodeOffset(
 this.scroll = this.$.viewScroller.getScrollTop(), this.$.viewScroller.scrollTo(0, this.scroll + t);
 },
 textForth: function() {
-this.textIndex += 1, this.textIndex === 1 ? this.$.backButton.setDisabled(!1) : this.textIndex === this.data.verseOrder.length - 1 && this.$.forthButton.setDisabled(!0), this.textIndex === this.data.verseOrder.length + 1 && this.nextSong(), this.textIndex <= this.data.verseOrder.length - 1 && this.scrollHelper();
+this.textIndex += 1, this.textIndex === 1 ? this.$.backButton.setDisabled(!1) : this.textIndex === this.data.verseOrder.length - 1 && this.$.forthButton.setDisabled(!0), this.textIndex === this.data.verseOrder.length + 1 && enyo.asyncMethod(this, "nextSong"), this.textIndex <= this.data.verseOrder.length - 1 && enyo.asyncMethod(this, "scrollHelper");
 },
 textBack: function() {
-this.textIndex -= 1, this.textIndex === 0 ? this.$.backButton.setDisabled(!0) : this.textIndex === this.data.verseOrder.length - 2 && this.$.forthButton.setDisabled(!1), this.textIndex === -2 && this.prevSong(), this.textIndex >= 0 && this.scrollHelper();
+this.textIndex -= 1, this.textIndex === 0 ? this.$.backButton.setDisabled(!0) : this.textIndex === this.data.verseOrder.length - 2 && this.$.forthButton.setDisabled(!1), this.textIndex === -2 && enyo.asyncMethod(this, "prevSong"), this.textIndex >= 0 && enyo.asyncMethod(this, "scrollHelper");
 },
 handleKeyPress: function(e, t) {
-this.running || (k = t.keyCode, this.log(k), (k === 33 || k === 38 || k === 37 || k === 32) && this.textIndex > -2 ? this.textBack() : (k === 34 || k === 40 || k === 39 || k === 13) && this.textIndex < this.data.verseOrder.length + 1 && this.textForth());
+this.running || (k = t.keyCode, this.log(k), (k === 33 || k === 38 || k === 37 || k === 32) && this.textIndex > -2 ? enyo.asyncMethod(this, "textBack") : (k === 34 || k === 40 || k === 39 || k === 13) && this.textIndex < this.data.verseOrder.length + 1 && enyo.asyncMethod(this, "textForth"));
 },
 nextSong: function() {
 var e = this.owner.owner;
-e.currentIndex >= 0 && e.currentIndex < e[e.currentList].content.length - 1 && (this.log("next Song"), e.setCurrentIndex(e.currentIndex + 1));
+e.currentIndex >= 0 && e.currentIndex < e[e.currentList].content.length - 1 && (this.log("next Song"), enyo.asyncMethod(e, "setCurrentIndex", e.currentIndex + 1));
 },
 prevSong: function() {
 var e = this.owner.owner;
-e.currentIndex > 0 && (this.log("prev Song"), e.setCurrentIndex(e.currentIndex - 1));
+e.currentIndex > 0 && (this.log("prev Song"), enyo.asyncMethod(e, "setCurrentIndex", e.currentIndex - 1));
 },
 songDragFinish: function(e, t) {
-this.log(), +t.dx > 120 && this.nextSong(), +t.dx < -120 && this.prevSong();
+this.log(), +t.dx > 120 && enyo.asyncMethod(this, "nextSong"), +t.dx < -120 && enyo.asyncMethod(this, "prevSong");
 },
 titleDragFinish: function(e, t) {
 Helper.phone && !this.running && (+t.dy > 50 && this.$.titleDrawer.setOpen(!0), +t.dy < -50 && this.$.titleDrawer.setOpen(!1));
@@ -10436,8 +10440,10 @@ closeTitle: function() {
 this.running || this.$.titleDrawer.setOpen(!1);
 },
 onDoubleTap: function() {
-if (this.tapTimer !== undefined) return this.log("double tap: set fullscreen: ", !this.fullscreen), window.clearTimeout(this.tapTimer), this.tapTimer = undefined, this.fullscreen = !this.fullscreen, this.fullscreen === !0 ? (this.$.headerToolbar.hide(), this.$.footerToolbar.hide(), this.$.titleDrawer.setOpen(!1), this.owner.owner.$.mainPanels.setIndex(1)) : (this.$.headerToolbar.show(), this.$.footerToolbar.show(), Helper.phone() ? this.owner.owner.$.mainPanels.setIndex(1) : this.owner.owner.$.mainPanels.setIndex(0)), window.PalmSystem && enyo.setFullScreen(this.fullscreen), this.log("mainPanels index", this.owner.owner.$.mainPanels.index), !0;
-this.tapTimer = window.setTimeout(enyo.bind(this, this.undefTimer), 500);
+this.tapTimer === undefined ? this.tapTimer = window.setTimeout(enyo.bind(this, this.undefTimer), 500) : enyo.asyncMethod(this, "executeDoubleTap");
+},
+executeDoubleTap: function() {
+this.log("double tap: set fullscreen: ", !this.fullscreen), window.clearTimeout(this.tapTimer), this.tapTimer = undefined, this.fullscreen = !this.fullscreen, this.fullscreen === !0 ? (this.$.headerToolbar.hide(), this.$.footerToolbar.hide(), this.$.titleDrawer.setOpen(!1), this.owner.owner.$.mainPanels.setIndex(1)) : (this.$.headerToolbar.show(), this.$.footerToolbar.show(), Helper.phone() ? this.owner.owner.$.mainPanels.setIndex(1) : this.owner.owner.$.mainPanels.setIndex(0)), window.PalmSystem && enyo.setFullScreen(this.fullscreen), this.log("mainPanels index", this.owner.owner.$.mainPanels.index);
 },
 undefTimer: function() {
 this.tapTimer = undefined;
@@ -10513,13 +10519,13 @@ allowHtml: !0
 }, {
 name: "prefsButton",
 kind: "onyx.IconButton",
-src: Helper.iconPath() + "prefs.png",
+src: Helper.iconPath + "prefs.png",
 style: "float: right",
 ontap: "showMenu"
 }, {
 name: "fontButton",
 kind: "onyx.IconButton",
-src: Helper.iconPath() + "font.png",
+src: Helper.iconPath + "font.png",
 style: "float: right",
 ontap: "showFontDialog"
 } ]
@@ -10552,7 +10558,7 @@ components: [ {
 tag: "il",
 components: [ {
 kind: "Image",
-src: Helper.iconPath() + "flag-help.png",
+src: Helper.iconPath + "flag-help.png",
 fit: !1
 }, {
 tag: "p",
@@ -10562,10 +10568,10 @@ content: $L("toggles language if present")
 tag: "il",
 components: [ {
 kind: "Image",
-src: Helper.iconPath() + "minus-help.png"
+src: Helper.iconPath + "minus-help.png"
 }, {
 kind: "Image",
-src: Helper.iconPath() + "plus-help.png"
+src: Helper.iconPath + "plus-help.png"
 }, {
 tag: "p",
 content: $L("Transposer")
@@ -10574,7 +10580,7 @@ content: $L("Transposer")
 tag: "il",
 components: [ {
 kind: "Image",
-src: Helper.iconPath() + "font-help.png",
+src: Helper.iconPath + "font-help.png",
 fit: !1
 }, {
 tag: "p",
@@ -10584,7 +10590,7 @@ content: $L("change fontsize and linespacing")
 tag: "il",
 components: [ {
 kind: "Image",
-src: Helper.iconPath() + "back-help.png"
+src: Helper.iconPath + "back-help.png"
 }, {
 tag: "p",
 content: $L("scrolls lyrics back depending on verseorder")
@@ -10593,7 +10599,7 @@ content: $L("scrolls lyrics back depending on verseorder")
 tag: "il",
 components: [ {
 kind: "Image",
-src: Helper.iconPath() + "forth-help.png"
+src: Helper.iconPath + "forth-help.png"
 }, {
 tag: "p",
 content: $L("scrolls lyrics forth depending on verseorder")
@@ -10602,7 +10608,7 @@ content: $L("scrolls lyrics forth depending on verseorder")
 tag: "il",
 components: [ {
 kind: "Image",
-src: Helper.iconPath() + "play-help.png"
+src: Helper.iconPath + "play-help.png"
 }, {
 tag: "p",
 content: $L("start autoscroll")
@@ -10611,7 +10617,7 @@ content: $L("start autoscroll")
 tag: "il",
 components: [ {
 kind: "Image",
-src: Helper.iconPath() + "info-help.png"
+src: Helper.iconPath + "info-help.png"
 }, {
 tag: "p",
 content: $L("shows songinfo")
@@ -10627,7 +10633,7 @@ components: [ {
 tag: "il",
 components: [ {
 kind: "Image",
-src: Helper.iconPath() + "search-help.png"
+src: Helper.iconPath + "search-help.png"
 }, {
 tag: "p",
 content: $L("opens and closes searchwindow")
@@ -10636,7 +10642,7 @@ content: $L("opens and closes searchwindow")
 tag: "il",
 components: [ {
 kind: "Image",
-src: Helper.iconPath() + "open-help.png"
+src: Helper.iconPath + "open-help.png"
 }, {
 tag: "p",
 content: $L("opens listpicker")
@@ -10645,7 +10651,7 @@ content: $L("opens listpicker")
 tag: "il",
 components: [ {
 kind: "Image",
-src: Helper.iconPath() + "library-help.png"
+src: Helper.iconPath + "library-help.png"
 }, {
 tag: "p",
 content: $L("toogles library")
@@ -10654,7 +10660,7 @@ content: $L("toogles library")
 tag: "il",
 components: [ {
 kind: "Image",
-src: Helper.iconPath() + "list-help.png"
+src: Helper.iconPath + "list-help.png"
 }, {
 tag: "p",
 content: $L("toogles custom list")
@@ -10663,7 +10669,7 @@ content: $L("toogles custom list")
 tag: "il",
 components: [ {
 kind: "Image",
-src: Helper.iconPath() + "add-help.png"
+src: Helper.iconPath + "add-help.png"
 }, {
 tag: "p",
 content: $L("adds song to active list or creates a new custom list")
@@ -10672,7 +10678,7 @@ content: $L("adds song to active list or creates a new custom list")
 tag: "il",
 components: [ {
 kind: "Image",
-src: Helper.iconPath() + "remove-help.png"
+src: Helper.iconPath + "remove-help.png"
 }, {
 tag: "p",
 content: $L("removes song from list or removes the custom list")
@@ -10688,7 +10694,7 @@ components: [ {
 tag: "il",
 components: [ {
 kind: "Image",
-src: Helper.iconPath() + "title-help.png"
+src: Helper.iconPath + "title-help.png"
 }, {
 tag: "p",
 content: $L("searches in titles")
@@ -10697,7 +10703,7 @@ content: $L("searches in titles")
 tag: "il",
 components: [ {
 kind: "Image",
-src: Helper.iconPath() + "author-help.png"
+src: Helper.iconPath + "author-help.png"
 }, {
 tag: "p",
 content: $L("searches in authors")
@@ -10706,7 +10712,7 @@ content: $L("searches in authors")
 tag: "il",
 components: [ {
 kind: "Image",
-src: Helper.iconPath() + "lyrics-help.png"
+src: Helper.iconPath + "lyrics-help.png"
 }, {
 tag: "p",
 content: $L("searches in lyrics")
@@ -10715,7 +10721,7 @@ content: $L("searches in lyrics")
 tag: "il",
 components: [ {
 kind: "Image",
-src: Helper.iconPath() + "key-help.png"
+src: Helper.iconPath + "key-help.png"
 }, {
 tag: "p",
 content: $L("searches in comments and themes")
@@ -10734,7 +10740,7 @@ components: [ {
 tag: "il",
 components: [ {
 kind: "Image",
-src: Helper.iconPath() + "title-help.png"
+src: Helper.iconPath + "title-help.png"
 }, {
 tag: "p",
 content: $L("opens metadata editing page")
@@ -10743,7 +10749,7 @@ content: $L("opens metadata editing page")
 tag: "il",
 components: [ {
 kind: "Image",
-src: Helper.iconPath() + "lyrics-help.png"
+src: Helper.iconPath + "lyrics-help.png"
 }, {
 tag: "p",
 content: $L("opens lyrics editing page")
@@ -10752,7 +10758,7 @@ content: $L("opens lyrics editing page")
 tag: "il",
 components: [ {
 kind: "Image",
-src: Helper.iconPath() + "add-help.png"
+src: Helper.iconPath + "add-help.png"
 }, {
 tag: "p",
 content: $L("adds a new metadata or lyric element")
@@ -10761,7 +10767,7 @@ content: $L("adds a new metadata or lyric element")
 tag: "il",
 components: [ {
 kind: "Image",
-src: Helper.iconPath() + "edit-help.png"
+src: Helper.iconPath + "edit-help.png"
 }, {
 tag: "p",
 content: $L("edits a lyric element (rename, language, parts and delete)")
@@ -10886,7 +10892,7 @@ kind: "onyx.MenuItem",
 onSelect: "showPreferences",
 components: [ {
 kind: "onyx.Icon",
-src: Helper.iconPath() + "menu-settings.png"
+src: Helper.iconPath + "menu-settings.png"
 }, {
 content: $L("Preferences")
 } ]
@@ -10895,7 +10901,7 @@ kind: "onyx.MenuItem",
 onSelect: "newSong",
 components: [ {
 kind: "onyx.Icon",
-src: Helper.iconPath() + "menu-new.png"
+src: Helper.iconPath + "menu-new.png"
 }, {
 content: $L("Create new song")
 } ]
@@ -10904,7 +10910,7 @@ kind: "onyx.MenuItem",
 onSelect: "refresh",
 components: [ {
 kind: "onyx.Icon",
-src: Helper.iconPath() + "menu-sync.png"
+src: Helper.iconPath + "menu-sync.png"
 }, {
 content: $L("Refresh Library")
 } ]
@@ -10913,7 +10919,7 @@ kind: "onyx.MenuItem",
 onSelect: "showHelp",
 components: [ {
 kind: "onyx.Icon",
-src: Helper.iconPath() + "menu-help.png"
+src: Helper.iconPath + "menu-help.png"
 }, {
 content: $L("Help")
 } ]
@@ -10922,7 +10928,7 @@ kind: "onyx.MenuItem",
 onSelect: "showAbout",
 components: [ {
 kind: "onyx.Icon",
-src: Helper.iconPath() + "menu-about.png"
+src: Helper.iconPath + "menu-about.png"
 }, {
 content: $L("About")
 } ]
@@ -10938,7 +10944,7 @@ content: '<span style="color: #9E0508; font-weight: bold;">' + Helper.app + " &n
 allowHtml: !0
 }, {
 kind: "Image",
-src: Helper.iconPath() + "icon128.png"
+src: Helper.iconPath + "icon128.png"
 } ]
 } ]
 } ]
@@ -11049,7 +11055,7 @@ name: "addList",
 kind: "List",
 classes: "inner-panels",
 ondragfinish: "dragFinish",
-style: "height: 100%;",
+style: "height: 100%; width: 100%;",
 onSetupItem: "getAdd",
 components: [ {
 name: "addItem",
@@ -11114,7 +11120,7 @@ placeholder: $L("part")
 }, {
 name: "addPartsButton",
 kind: "onyx.IconButton",
-src: Helper.iconPath() + "add.png",
+src: Helper.iconPath + "add.png",
 style: "margin: .25rem 0 0 .5rem !important;",
 ontap: "addPart"
 } ]
@@ -11175,7 +11181,7 @@ components: [ {
 content: $L("Insert text to import here ...")
 }, {
 kind: "onyx.IconButton",
-src: Helper.iconPath() + "help.png",
+src: Helper.iconPath + "help.png",
 ontap: "openHelp",
 classes: "editbutton"
 } ]
@@ -11232,10 +11238,10 @@ showPreferences: function() {
 this.log("opening Preferences"), this.owner.$.viewPane.$.preferences.setOldIndex(this.owner.$.viewPane.$.viewPanels.index), this.owner.$.viewPane.$.preferences.setPrefs(), this.owner.$.viewPane.$.viewPanels.setIndex(2), this.owner.$.infoPanels.setIndex(0), !Helper.phone() || this.owner.$.mainPanels.setIndex(1);
 },
 refresh: function() {
-this.owner.refreshLibrary(), this.owner.$.infoPanels.setIndex(0);
+enyo.asyncMethod(this.owner, "refreshLibrary"), this.owner.$.infoPanels.setIndex(0);
 },
 newSong: function() {
-this.log("create a new Song, opnening popup ..."), this.owner.openCreateSong(), this.owner.$.infoPanels.setIndex(0);
+this.log("create a new Song, opnening popup ..."), enyo.asyncMethod(this.owner, "openCreateSong"), this.owner.$.infoPanels.setIndex(0);
 },
 showHelp: function() {
 this.log("show help panel"), this.owner.$.viewPane.$.viewPanels.setIndex(0), this.owner.$.infoPanels.setIndex(0), this.owner.setCurrentIndex(undefined), !Helper.phone() || this.owner.$.mainPanels.setIndex(1);
@@ -11315,7 +11321,7 @@ placeholder: $L("part")
 }, {
 name: "delPB" + t,
 kind: "onyx.IconButton",
-src: Helper.iconPath() + "remove.png",
+src: Helper.iconPath + "remove.png",
 style: "margin: .25rem 0 0 .5rem !important;",
 ontap: "delPart"
 } ]
@@ -11411,16 +11417,16 @@ closeClicked: function(e) {
 this.log(this.$.Pane.getIndex());
 switch (this.$.Pane.getIndex()) {
 case 2:
-this.$.size.isSimple ? this.css.size = Math.round(this.css.fMax) : this.css.size = Math.round((this.css.fMin + this.css.fMax) / 2), this.owner.saveCss(this.css), this.owner.$.viewPane.$.songViewPane.resizeLyrics();
+this.$.size.isSimple ? this.css.size = Math.round(this.css.fMax) : this.css.size = Math.round((this.css.fMin + this.css.fMax) / 2), enyo.asyncMethod(this.owner, "saveCss", this.css), enyo.asyncMethod(this.owner.$.viewPane.$.songViewPane, "resizeHandler");
 break;
 case 4:
-this.$.closeButton.setContent($L("Close")), this.$.deleteButton.hide(), this.closeEdit();
+this.$.closeButton.setContent($L("Close")), this.$.deleteButton.hide(), enyo.asyncMethod(this, "this.closeEdit");
 break;
 case 5:
 this.$.closeButton.setContent($L("Close")), Helper.browser() || this.closeChordSelect(), this.owner.$.viewPane.$.editToaster.$.lyricsPane.setChord(undefined);
 break;
 case 6:
-this.$.closeButton.setContent($L("Close")), this.$.deleteButton.hide(), this.import();
+this.$.closeButton.setContent($L("Close")), this.$.deleteButton.hide(), enyo.asyncMethod(this, "import");
 }
 this.owner.$.infoPanels.setIndex(0);
 }
@@ -11455,13 +11461,13 @@ style: "margin: 0; padding: 0; text-align: center;",
 components: [ {
 name: "meta",
 kind: "onyx.ToggleIconButton",
-src: Helper.iconPath() + "title.png",
+src: Helper.iconPath + "title.png",
 ontap: "toggleMeta",
 value: !0
 }, {
 name: "lyrics",
 kind: "onyx.ToggleIconButton",
-src: Helper.iconPath() + "lyrics.png",
+src: Helper.iconPath + "lyrics.png",
 ontap: "toggleLyrics"
 } ]
 }, {
@@ -11497,7 +11503,7 @@ classes: "quer"
 }, {
 name: "chordpicker",
 kind: "onyx.IconButton",
-src: Helper.iconPath() + "chordpicker.png",
+src: Helper.iconPath + "chordpicker.png",
 style: "float: left;",
 onmousedown: "chordPick",
 showing: !1
@@ -11518,19 +11524,19 @@ ontap: "saveClicked"
 }, {
 name: "add",
 kind: "onyx.IconButton",
-src: Helper.iconPath() + "add.png",
+src: Helper.iconPath + "add.png",
 style: "float: right;",
 ontap: "add"
 } ]
 } ],
 toggleMeta: function() {
-this.log(), this.$.editPane.setIndex(0), this.$.lyrics.setValue(!1), this.$.chordpicker.hide(), this.owner.owner.$.infoPanels.setIndex(0), this.$.lyricsPane.saveModifications();
+this.log(), this.$.editPane.setIndex(0), this.$.lyrics.setValue(!1), this.$.chordpicker.hide(), this.owner.owner.$.infoPanels.setIndex(0), enyo.asyncMethod(this.$.lyricsPane, "saveModifications");
 },
 toggleLyrics: function() {
-this.log(), this.$.editPane.setIndex(1), this.$.meta.setValue(!1), this.$.chordpicker.show(), this.owner.owner.$.infoPanels.setIndex(0), this.$.metaPane.saveModifications();
+this.log(), this.$.editPane.setIndex(1), this.$.meta.setValue(!1), this.$.chordpicker.show(), this.owner.owner.$.infoPanels.setIndex(0), enyo.asyncMethod(this.$.metaPane, "saveModifications");
 },
 chordPick: function() {
-this.log(), !Helper.browser() && this.$.lyricsPane.el ? (this.$.lyricsPane.storeRange(), this.owner.owner.$.infoPanels.setIndex(1), this.owner.owner.$.sidePane.openPicker()) : (this.owner.owner.$.infoPanels.setIndex(1), this.owner.owner.$.sidePane.openPicker());
+this.log(), !Helper.browser() && this.$.lyricsPane.el ? (this.$.lyricsPane.storeRange(), this.owner.owner.$.infoPanels.setIndex(1), enyo.asyncMethod(this.owner.owner.$.sidePane, "openPicker")) : (this.owner.owner.$.infoPanels.setIndex(1), enyo.asyncMethod(this.owner.owner.$.sidePane, "openPicker"));
 },
 populate: function() {
 this.log(), this.xml && (this.lyrics = ParseXml.editLyrics(this.xml), this.$.lyricsPane.setLyrics(this.lyrics), this.metadata = ParseXml.allMetadata(this.xml), this.$.metaPane.setMetadata(this.metadata), this.$.metaPane.setFile(this.file), this.$.title.setContent(this.metadata.titles[0].title));
@@ -11546,10 +11552,10 @@ this.log(), this.$.metaPane.saveModifications(), this.$.lyricsPane.saveModificat
 var t = WriteXml.edit(this.xml, this.metadata, this.lyrics);
 this.owner.owner.online && this.owner.owner.writeXml(this.file, t, this.metadata.titles[0].title);
 var n = t.slice(t.indexOf("modifiedDate") + 14);
-n = n.substring(0, n.indexOf('"', 1)), this.owner.owner.dbWriteXml(this.file, t, Date.parse(n), this.metadata.titles[0].title), this.owner.$.songViewPane.renderLyrics(), this.owner.$.viewPanels.setIndex(1), this.owner.owner.$.infoPanels.setIndex(0);
+n = n.substring(0, n.indexOf('"', 1)), enyo.asyncMethod(this.owner.owner, "dbWriteXml", this.file, t, Date.parse(n), this.metadata.titles[0].title), enyo.asyncMethod(this.owner.$.songViewPane, "renderLyrics"), this.owner.$.viewPanels.setIndex(1), this.owner.owner.$.infoPanels.setIndex(0);
 },
 closeThis: function() {
-this.log(), this.setXml(undefined), this.$.lyricsPane.setChord(undefined), this.owner.$.viewPanels.setIndex(1), this.owner.owner.$.infoPanels.setIndex(0);
+this.log(), this.setXml(undefined), this.$.lyricsPane.setChord(undefined), enyo.asyncMethod(this.owner.$.viewPanels, "setIndex", 1), enyo.asyncMethod(this.owner.owner.$.infoPanels, "setIndex", 0);
 }
 });
 
@@ -11863,7 +11869,7 @@ ontap: "deleteFile"
 } ]
 } ],
 addNew: function(e) {
-this.log(), this.saveModifications(), this.metadataChanged(), this["add" + e.charAt(0).toUpperCase() + e.slice(1)]();
+this.log(), this.saveModifications(), enyo.asyncMethod(this, "metadataChanged"), this["add" + e.charAt(0).toUpperCase() + e.slice(1)]();
 },
 addTitle: function() {
 this.titleCount += 1, this.log(this.titleCount), this.$.titlebox.createComponent({
@@ -12134,7 +12140,7 @@ content: t
 }, {
 name: "eB" + i,
 kind: "onyx.IconButton",
-src: Helper.iconPath() + "edit.png",
+src: Helper.iconPath + "edit.png",
 ontap: "openEdit",
 classes: "editbutton"
 } ]
@@ -12184,13 +12190,13 @@ this.owner.setLyrics(this.lyrics);
 openEdit: function(e) {
 this.log(), this.saveModifications();
 var t = e.name.replace("eB", "");
-this.el = t, this.owner.owner.owner.$.infoPanels.setIndex(1), this.owner.owner.owner.$.sidePane.editElement(this.lyrics[t], $L("Edit") + " " + $L(t.charAt(0)) + " " + t.substring(1, t.length));
+this.el = t, this.owner.owner.owner.$.infoPanels.setIndex(1), enyo.asyncMethod(this.owner.owner.owner.$.sidePane, "editElement", this.lyrics[t], $L("Edit") + " " + $L(t.charAt(0)) + " " + t.substring(1, t.length));
 },
 insertSamePlace: function(e, t) {
 this.setLyrics(Helper.insertSame(this.lyrics, e, t, this.el));
 },
 deleteElement: function() {
-this.log(), delete this.lyrics[this.el], this.lyricsChanged();
+this.log(), delete this.lyrics[this.el], enyo.asyncMethod(this, "lyricsChanged");
 },
 storeEditEl: function(e) {
 Helper.browser() ? !this.chord || e.insertAtCursor(this.chord) : (this.el = e.name, this.log(this.el));

@@ -7,11 +7,12 @@
     <!-- -->
     <meta http-equiv="Content-Type" content="text/html; charset=utf8"/>
     <meta name="apple-mobile-web-app-capable" content="yes"/>
+    <!-- Set viewport and fontsize using window.devicePixelRatio -->
     <script>
         var d = document.getElementsByTagName('head')[0]
         var meta = document.createElement("meta");
         meta.setAttribute('name','viewport');
-        meta.setAttribute('content','initial-scale='+ (1/window.devicePixelRatio) + ',user-scalable=no');
+        meta.setAttribute('content','width='+((window.innerWidth > 0) ? window.innerWidth : screen.width)+', user-scalable=no, initial-scale='+(1/window.devicePixelRatio)+', minimum-scale='+(1/window.devicePixelRatio)+', maximum-scale='+(1/window.devicePixelRatio));
         d.appendChild(meta);
         var s = document.createElement('style');
         s.setAttribute('type', 'text/css');
@@ -29,7 +30,7 @@
   </head>
   <body class="enyo-unselectable" style="background-image: url(assets/images/paper.jpg);">
     <script>
-    // tell Enyo to listen for deviceready event
+      // tell Enyo to listen for deviceready event
       enyo.dispatcher.listen(document, "deviceready");
       new mySongs().renderInto(document.body);
     </script>
