@@ -5636,7 +5636,7 @@ e.drawImage(this.image, this.bounds.l, this.bounds.t);
 
 function Helper() {}
 
-Helper.app = "mySongs", Helper.vers = "0.5", Helper.iconPath = "assets/images/1.00/", Helper.ratio = 1, Helper.phone = function() {
+Helper.app = "mySongs", Helper.vers = "0.5.0.1", Helper.iconPath = "assets/images/1.00/", Helper.ratio = 1, Helper.phone = function() {
 var e = enyo.platform;
 return window.innerWidth < 800 || e.blackberry ? !0 : !1;
 }, Helper.browser = function() {
