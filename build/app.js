@@ -5636,10 +5636,7 @@ e.drawImage(this.image, this.bounds.l, this.bounds.t);
 
 function Helper() {}
 
-Helper.app = "mySongs", Helper.vers = "0.5", Helper.iconPath = "assets/images/1.00/", Helper.calcRatio = function() {
-var e = Math.round(window.devicePixelRatio).toFixed(2).toString();
-if (e === "1.50" || e === "2.00" || e === "2.24") Helper.iconPath = "assets/images/" + e + "/";
-}, Helper.ratio = Math.round(window.devicePixelRatio).toFixed(2), Helper.phone = function() {
+Helper.app = "mySongs", Helper.vers = "0.5", Helper.iconPath = "assets/images/1.00/", Helper.ratio = 1, Helper.phone = function() {
 var e = enyo.platform;
 return window.innerWidth < 800 || e.blackberry ? !0 : !1;
 }, Helper.browser = function() {
@@ -8313,7 +8310,7 @@ this.cl.setFPS(this.fps);
 
 // MySongs.js
 
-Helper.calcRatio(), enyo.kind({
+enyo.kind({
 name: "mySongs",
 fit: !0,
 realtimeFit: !0,
